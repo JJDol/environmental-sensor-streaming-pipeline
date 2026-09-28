@@ -16,9 +16,16 @@ from src.config import (
 REQUIRED_MEASUREMENTS = {
     "temperature_c",
     "humidity_percent",
-    "air_quality_index",
-    "noise_db",
-    "smoke_level",
+    "absolute_humidity",
+    "co_gt",
+    "benzene_gt",
+    "nox_gt",
+    "no2_gt",
+    "pt08_s1_co",
+    "pt08_s2_nmhc",
+    "pt08_s3_nox",
+    "pt08_s4_no2",
+    "pt08_s5_o3",
 }
 
 

@@ -2,12 +2,12 @@
 
 This prototype implements Task 2 of the Data Engineering portfolio: a stream processing pipeline for near real-time municipal environmental sensor data.
 
-The project replays environmental sensor readings row by row as a stream, publishes them to Apache Kafka, consumes them with a Python service, and stores validated events in MongoDB for future dashboards, reports, or citizen alert services.
+The project replays UCI Air Quality sensor readings row by row as a stream, publishes them to Apache Kafka, consumes them with a Python service, and stores validated events in MongoDB for future dashboards, reports, or citizen alert services.
 
 ## Architecture
 
 ```text
-Open environmental dataset or sample CSV
+UCI Air Quality CSV
         |
         v
 Python producer
@@ -30,11 +30,16 @@ MongoDB collection: sensor_readings
 - Docker Compose for reproducible local execution
 - GitHub for version control and documentation
 
-## Data Source Plan
+## Data Source
 
-The final portfolio can use an open environmental or IoT dataset and replay it as a stream. For reproducibility, this repository includes a small CSV file in `data/sample_environmental_readings.csv` that follows the same event shape expected from a city sensor dataset.
+The main data source is the UCI Machine Learning Repository Air Quality dataset:
 
-Good public dataset candidates include environmental or IoT air-quality datasets with timestamped measurements such as temperature, humidity, air quality, particulate matter, or similar sensor readings. The producer can be pointed to a larger CSV file by changing `SENSOR_DATA_FILE`.
+- Dataset page: <https://archive.ics.uci.edu/dataset/360/air+quality>
+- Local file: `data/AirQualityUCI.csv`
+
+The CSV contains hourly air-quality readings from a multisensor device, including temperature, relative humidity, absolute humidity, and multiple gas sensor responses. The producer replays rows with a delay to simulate a near real-time stream.
+
+For quick local tests, the producer streams the first 25 rows by default. Change `PRODUCER_MAX_ROWS` in `docker-compose.yml` to stream more rows, or set it to `0` to stream the whole file.
 
 ## Run The Prototype
 
@@ -44,7 +49,7 @@ Start the complete pipeline:
 docker compose up --build
 ```
 
-The producer publishes sample readings every two seconds. The consumer subscribes to the Kafka topic and stores each event in MongoDB.
+The producer publishes UCI air-quality readings every two seconds. The consumer subscribes to the Kafka topic and stores each event in MongoDB.
 
 Inspect stored records from another terminal:
 

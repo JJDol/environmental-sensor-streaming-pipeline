@@ -44,7 +44,8 @@ services:
       KAFKA_TOPIC: environmental-readings
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PRODUCER_INTERVAL_SECONDS: 2
-      SENSOR_DATA_FILE: /app/data/sample_environmental_readings.csv
+      PRODUCER_MAX_ROWS: 25
+      SENSOR_DATA_FILE: /app/data/AirQualityUCI.csv
     command: ["python", "-m", "src.producer"]
 
   consumer:
