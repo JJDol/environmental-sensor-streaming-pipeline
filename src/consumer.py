@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from confluent_kafka import Consumer, KafkaException
 from pymongo import MongoClient, ASCENDING
 
+from src.alerts import evaluate_temperature_alert
 from src.config import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC,
@@ -49,9 +50,33 @@ def validate_event(event: dict) -> None:
         raise ValueError(f"Missing measurements: {sorted(missing_measurements)}")
 
 
+def add_data_quality(event: dict) -> None:
+    missing = sorted(
+        name for name in REQUIRED_MEASUREMENTS
+        if event["measurements"][name] is None
+    )
+    if not missing:
+        status = "complete"
+    elif len(missing) == len(REQUIRED_MEASUREMENTS):
+        status = "missing"
+    else:
+        status = "partial"
+
+    event["data_quality"] = {
+        "status": status,
+        "missing_measurements": missing,
+    }
+    if missing:
+        print(
+            f"WARNING: {event['event_id']} has missing measurements: "
+            f"{', '.join(missing)}"
+        )
+
+
 def main() -> None:
     mongo_client = MongoClient(MONGO_URI)
     collection = mongo_client[MONGO_DATABASE][MONGO_COLLECTION]
+    alerts = mongo_client[MONGO_DATABASE]["alerts"]
     collection.create_index([("event_id", ASCENDING)], unique=True)
     collection.create_index([("sensor_id", ASCENDING), ("observed_at", ASCENDING)])
 
@@ -77,6 +102,7 @@ def main() -> None:
         event = json.loads(message.value().decode("utf-8"))
         try:
             validate_event(event)
+            add_data_quality(event)
             event["stored_at"] = datetime.now(timezone.utc).isoformat()
             collection.update_one(
                 {"event_id": event["event_id"]},
@@ -84,6 +110,7 @@ def main() -> None:
                 upsert=True,
             )
             print(f"Stored {event['event_id']} from {event['sensor_id']}")
+            evaluate_temperature_alert(event, alerts)
         except Exception as exc:
             print(f"Rejected message at offset {message.offset()}: {exc}")
 
