@@ -38,8 +38,8 @@ services:
   producer:
     build: .
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     environment:
       KAFKA_TOPIC: environmental-readings
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -51,8 +51,8 @@ services:
   consumer:
     build: .
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       mongo:
         condition: service_started
     environment:
@@ -62,6 +62,24 @@ services:
       MONGO_DATABASE: municipal_environment
       MONGO_COLLECTION: sensor_readings
     command: ["python", "-m", "src.consumer"]
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["kafka-topics"]
+    command:
+      - --bootstrap-server
+      - kafka:9092
+      - --create
+      - --if-not-exists
+      - --topic
+      - environmental-readings
+      - --partitions
+      - "1"
+      - --replication-factor
+      - "1"
 
 volumes:
   mongo-data:
